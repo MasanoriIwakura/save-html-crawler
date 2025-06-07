@@ -11,5 +11,9 @@
   "devDependencies": {
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "puppeteer": "^24.10.0"
   }
 }
