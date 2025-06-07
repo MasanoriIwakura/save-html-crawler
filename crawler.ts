@@ -42,16 +42,7 @@ async function saveCompletePage(
 ) {
   const page = await browser.newPage();
   try {
-    for (let attempt = 1; attempt <= 10; attempt++) {
-      try {
-        await page.goto(url, { timeout: 60 * 1000 });
-        break;
-      } catch (err) {
-        if (attempt === 3) {
-          throw err;
-        }
-      }
-    }
+    await page.goto(url, { timeout: 10 * 1000 });
 
     const savePath = path.join(OUTPUT_DIR, keyword);
     await fs.promises.mkdir(savePath, { recursive: true });
@@ -63,21 +54,12 @@ async function saveCompletePage(
       downloadPath: savePath,
     });
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const { data } = await client.send("Page.captureSnapshot", {
-          format: "mhtml",
-        });
+    const { data } = await client.send("Page.captureSnapshot", {
+      format: "mhtml",
+    });
 
-        const mhtmlPath = path.join(savePath, `${keyword}.mhtml`);
-        fs.writeFileSync(mhtmlPath, data);
-        break;
-      } catch (err) {
-        if (attempt === 3) {
-          throw err;
-        }
-      }
-    }
+    const mhtmlPath = path.join(savePath, `${keyword}.mhtml`);
+    fs.writeFileSync(mhtmlPath, data);
 
     // console.log(`✅ ${keyword}: 保存成功 (${url})`);
   } catch (err) {
@@ -103,6 +85,7 @@ async function main() {
     await saveCompletePage(entry.keyword, entry.url, browser);
     progressBar.increment();
   }
+  progressBar.stop();
   console.log("全てのページを保存しました。");
 
   await browser.close();
