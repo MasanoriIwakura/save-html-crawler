@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import csv from "csv-parser";
 import puppeteer, { Browser } from "puppeteer";
+import cliProgress from "cli-progress";
 
 type UrlEntry = {
   keyword: string;
@@ -10,6 +11,14 @@ type UrlEntry = {
 
 const CSV_FILE = "settings.csv";
 const OUTPUT_DIR = "pages";
+
+const progressBar = new cliProgress.SingleBar({
+  format:
+    "進捗 | {bar} | {percentage}% | {value}/{total} | {duration_formatted}",
+  barCompleteChar: "\u2588",
+  barIncompleteChar: "\u2591",
+  hideCursor: true,
+});
 
 async function readCsv(filePath: string): Promise<UrlEntry[]> {
   return new Promise((resolve, reject) => {
@@ -33,9 +42,9 @@ async function saveCompletePage(
 ) {
   const page = await browser.newPage();
   try {
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 10; attempt++) {
       try {
-        await page.goto(url, { waitUntil: "networkidle2", timeout: 60 * 1000 });
+        await page.goto(url, { timeout: 60 * 1000 });
         break;
       } catch (err) {
         if (attempt === 3) {
@@ -70,7 +79,7 @@ async function saveCompletePage(
       }
     }
 
-    console.log(`✅ ${keyword}: 保存成功 (${url})`);
+    // console.log(`✅ ${keyword}: 保存成功 (${url})`);
   } catch (err) {
     console.error(`❌ ${keyword}: 保存失敗 (${url})`, err);
   } finally {
@@ -89,8 +98,10 @@ async function main() {
   const browser = await puppeteer.launch({ headless: true });
 
   console.log("ブラウザを起動しました。");
+  progressBar.start(entries.length, 0);
   for (const entry of entries) {
     await saveCompletePage(entry.keyword, entry.url, browser);
+    progressBar.increment();
   }
   console.log("全てのページを保存しました。");
 
